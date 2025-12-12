@@ -1,0 +1,136 @@
+import { 
+  Bot, 
+  BrainCircuit, 
+  Code2, 
+  Globe, 
+  Cpu, 
+  Send,
+  Instagram,
+  MessageCircle
+} from 'lucide-react';
+import { Project, Service, TagType, SocialLink, HeroData } from './types';
+
+export const HERO_DATA: HeroData = {
+  name: "Alex Dev",
+  title: "AI Engineer & Architect",
+  bio: "Разрабатываю интеллектуальные системы автоматизации, внедряю LLM в бизнес-процессы и создаю современные веб-интерфейсы.",
+  avatarUrl: "https://picsum.photos/200/200",
+  status: "Open to work"
+};
+
+export const PROJECTS: Project[] = [
+  {
+    id: '1',
+    title: "AI Support Assistant",
+    description: "Умный бот технической поддержки на базе Gemini API. Обрабатывает входящие заявки, классифицирует проблемы и отвечает на частые вопросы.",
+    longDescription: "Этот проект был создан для снижения нагрузки на первую линию поддержки крупного интернет-магазина. Бот использует модель Gemini 2.5 Flash для анализа контекста запроса, определения тональности и поиска решения в базе знаний компании. Если бот не может решить проблему самостоятельно, он формирует структурированный тикет и передает его живому оператору с кратким резюме проблемы.",
+    features: [
+      "Интеграция с базой знаний (RAG)",
+      "Автоматическая классификация тикетов",
+      "Определение сентимента клиента",
+      "Бесшовная передача диалога оператору"
+    ],
+    imageUrl: "https://picsum.photos/800/600?random=1",
+    tags: [TagType.AI, TagType.BOT, TagType.AUTOMATION],
+    stats: "Сокращение времени ответа на 80%",
+    link: "#"
+  },
+  {
+    id: '2',
+    title: "Lead Gen Automator",
+    description: "Система автоматического сбора и квалификации лидов из Telegram каналов. Интеграция с CRM и автоматическая рассылка.",
+    longDescription: "Комплексное решение для отдела продаж. Система мониторит десятки тематических чатов и каналов в Telegram по ключевым словам. Найденные сообщения анализируются LLM на предмет коммерческого интереса (лид-скоринг). Релевантные контакты автоматически заносятся в CRM (AmoCRM/Bitrix24), и запускается персонализированная цепочка прогревающих сообщений.",
+    features: [
+      "Парсинг в реальном времени",
+      "AI-квалификация лидов",
+      "Интеграция с AmoCRM",
+      "Автоматический фоллоу-ап"
+    ],
+    imageUrl: "https://picsum.photos/800/600?random=2",
+    tags: [TagType.AUTOMATION, TagType.AI],
+    stats: "+150 лидов в неделю"
+  },
+  {
+    id: '3',
+    title: "SaaS Dashboard UI",
+    description: "Адаптивная панель управления для аналитики нейросетей. Темная тема, графики в реальном времени и управление токенами.",
+    longDescription: "Фронтенд-часть SaaS платформы для управления доступом к корпоративным AI-моделям. Разработан современный интерфейс с акцентом на визуализацию данных. Использованы библиотеки Recharts для графиков и Framer Motion для микро-взаимодействий. Полная адаптивность под мобильные устройства.",
+    features: [
+      "Real-time графики использования токенов",
+      "Управление API ключами",
+      "Темная/Светлая тема",
+      "Адаптивный дизайн (Mobile First)"
+    ],
+    imageUrl: "https://picsum.photos/800/600?random=3",
+    tags: [TagType.WEB, TagType.AI],
+    stats: "React + Tailwind",
+    link: "#"
+  },
+  {
+    id: '4',
+    title: "Voice-to-Text Notes",
+    description: "Telegram Mini App для записи голосовых заметок и их транскрибации в структурированный текст с помощью AI.",
+    longDescription: "Мини-приложение внутри Telegram, которое позволяет на ходу записывать мысли. Аудио отправляется на сервер, транскрибируется через Whisper/Gemini Audio, а затем LLM превращает поток сознания в структурированный список задач, заметку в Notion или событие в календаре.",
+    features: [
+      "Запись голосовых сообщений в WebApp",
+      "AI-структурирование текста",
+      "Экспорт в Notion/Calendar",
+      "Telegram WebApp интерфейс"
+    ],
+    imageUrl: "https://picsum.photos/800/600?random=4",
+    tags: [TagType.BOT, TagType.AI, TagType.WEB],
+    stats: "Telegram WebApp",
+    link: "#"
+  }
+];
+
+export const SERVICES: Service[] = [
+  {
+    id: 's1',
+    title: "Разработка AI Ботов",
+    description: "Чат-боты для поддержки, продаж и внутренних процессов компании.",
+    longDescription: "Разрабатываю умных чат-ботов на базе LLM (Gemini, GPT-4, Claude), которые способны вести естественный диалог, запоминать контекст и выполнять целевые действия. Боты могут быть интегрированы в Telegram, WhatsApp или на сайт. Особое внимание уделяется промпт-инжинирингу для точного соответствия тональности бренда.",
+    features: [
+      "Интеллектуальные ответы на базе базы знаний",
+      "Интеграция с CRM и Google Sheets",
+      "Сценарии продаж и квалификации лидов",
+      "Техническая поддержка 24/7"
+    ],
+    icon: Bot,
+    priceStart: "от $500"
+  },
+  {
+    id: 's2',
+    title: "Автоматизация Бизнеса",
+    description: "Связка сервисов (Make/n8n), парсинг данных и внедрение CRM.",
+    longDescription: "Создаю автоматизированные конвейеры обработки данных, которые экономят сотни часов ручного труда. Связываю между собой различные сервисы (CRM, Таблицы, Мессенджеры, Почту) в единую экосистему. Использую low-code платформы Make (Integromat) и n8n для быстрой разработки и легкой поддержки.",
+    features: [
+      "Автоматический сбор данных (парсинг)",
+      "Синхронизация между сервисами",
+      "Генерация отчетов и документов",
+      "Telegram-уведомления о событиях"
+    ],
+    icon: BrainCircuit,
+    priceStart: "от $300"
+  },
+  {
+    id: 's3',
+    title: "Web Development",
+    description: "Landing Page, Telegram Mini Apps и корпоративные порталы.",
+    longDescription: "Разрабатываю современные, быстрые и адаптивные веб-приложения. Специализируюсь на стеке React + Tailwind CSS. Создаю как классические лендинги с высокой конверсией, так и сложные Telegram Mini Apps (TWA), которые открываются прямо внутри мессенджера и имеют доступ к API Telegram.",
+    features: [
+      "Адаптивная верстка (Mobile First)",
+      "Высокая скорость загрузки",
+      "SEO-оптимизация",
+      "Интеграция с Telegram WebApp"
+    ],
+    icon: Globe,
+    priceStart: "от $800"
+  }
+];
+
+export const SOCIALS: SocialLink[] = [
+  { platform: "Telegram", url: "https://t.me/username", icon: Send, iconName: "Send" },
+  { platform: "WhatsApp", url: "https://wa.me/1234567890", icon: MessageCircle, iconName: "MessageCircle" },
+  { platform: "Instagram", url: "https://instagram.com/username", icon: Instagram, iconName: "Instagram" },
+];

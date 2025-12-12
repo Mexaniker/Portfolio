@@ -4,5 +4,14 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: './', // Это важно для GitHub Pages, чтобы пути к файлам были относительными
+  // Относительный путь для GitHub Pages
+  base: './',
+  build: {
+    // Явно указываем папку сборки
+    outDir: 'dist',
+    // Отключаем source maps для ускорения сборки
+    sourcemap: false,
+    // Увеличиваем лимит предупреждения о размере чанков
+    chunkSizeWarningLimit: 1600,
+  }
 })

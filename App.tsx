@@ -7,14 +7,13 @@ import { SectionHeader } from './components/SectionHeader';
 import { PROJECTS as STATIC_PROJECTS, SERVICES as STATIC_SERVICES, HERO_DATA as STATIC_HERO, SOCIALS as STATIC_SOCIALS } from './constants';
 import { ProjectModal } from './components/ProjectModal';
 import { ServiceModal } from './components/ServiceModal';
-import { Project, Service, ProfileData, SocialLink } from './types';
+import { Project, Service, ProfileData, SocialLink, ThemeSettings } from './types';
 import { Mail, Settings } from 'lucide-react';
 import { db, auth } from './firebase';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
 import { AdminPanel } from './components/AdminPanel';
 import { Login } from './components/Login';
 import * as LucideIcons from 'lucide-react';
+import { NewYearOverlay } from './components/NewYearOverlay';
 
 // VK Icon Definition
 const VKIcon = ({ size = 20, className = "" }: { size?: number | string, className?: string }) => (
@@ -59,6 +58,7 @@ const App: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [profile, setProfile] = useState<ProfileData>({ hero: STATIC_HERO, socials: STATIC_SOCIALS });
+  const [themeSettings, setThemeSettings] = useState<ThemeSettings>({ isNewYearMode: false });
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -79,7 +79,8 @@ const App: React.FC = () => {
     }
 
     if (!auth) return;
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    // Firebase v8 auth listener
+    const unsubscribe = auth.onAuthStateChanged((user) => {
       setIsAuthenticated(!!user);
     });
     return () => unsubscribe();
@@ -97,13 +98,17 @@ const App: React.FC = () => {
     }
 
     try {
-      const projectsSnap = await getDocs(collection(db, 'projects'));
-      const servicesSnap = await getDocs(collection(db, 'services'));
-      const profileSnap = await getDoc(doc(db, 'settings', 'profile'));
+      const projectsSnap = await db.collection('projects').get();
+      const servicesSnap = await db.collection('services').get();
+      const profileSnap = await db.collection('settings').doc('profile').get();
+      const themeSnap = await db.collection('settings').doc('theme').get();
 
       // Process Projects
       if (!projectsSnap.empty) {
-        setProjects(projectsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project)));
+        const fetchedProjects = projectsSnap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Project));
+        // Sort by 'order' field, treating undefined as a high number (end of list) or 0
+        fetchedProjects.sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+        setProjects(fetchedProjects);
       } else {
         // DB Connected but empty? Show empty array, NOT static data.
         setProjects([]); 
@@ -111,7 +116,7 @@ const App: React.FC = () => {
 
       // Process Services
       if (!servicesSnap.empty) {
-        const fetchedServices = servicesSnap.docs.map(doc => {
+        const fetchedServices = servicesSnap.docs.map((doc: any) => {
             const data = doc.data();
             // Restore Icon component from string name
             const iconName = data.iconName || 'Box';
@@ -121,6 +126,8 @@ const App: React.FC = () => {
             
             return { id: doc.id, ...data, icon: IconComponent } as Service;
         });
+        // Sort by 'order' field
+        fetchedServices.sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
         setServices(fetchedServices);
       } else {
         // DB Connected but empty? Show empty array.
@@ -128,10 +135,10 @@ const App: React.FC = () => {
       }
 
       // Process Profile
-      if (profileSnap.exists()) {
+      if (profileSnap.exists) {
           const data = profileSnap.data();
           // Restore Social Icons
-          const socials = (data.socials || []).map((s: any) => {
+          const socials = (data?.socials || []).map((s: any) => {
               const iconName = s.iconName || 'Link';
               let IconComponent = (LucideIcons as any)[iconName];
               if (!IconComponent && iconName === 'VK') IconComponent = VKIcon;
@@ -140,13 +147,20 @@ const App: React.FC = () => {
               return { ...s, icon: IconComponent } as SocialLink;
           });
           setProfile({
-              hero: data.hero as any,
+              hero: data?.hero as any,
               socials: socials
           });
       } else {
           // Keep static hero only if DB profile is missing (to avoid broken layout)
           // or you could set empty strings if preferred.
           setProfile({ hero: STATIC_HERO, socials: STATIC_SOCIALS });
+      }
+
+      // Process Theme
+      if (themeSnap.exists) {
+        setThemeSettings(themeSnap.data() as ThemeSettings);
+      } else {
+        setThemeSettings({ isNewYearMode: false });
       }
 
     } catch (error) {
@@ -214,23 +228,43 @@ const App: React.FC = () => {
             initialProjects={projects} 
             initialServices={services} 
             initialProfile={profile}
+            initialTheme={themeSettings}
             onUpdate={fetchData} 
           />
       </div>
     );
   }
 
+  // --- GLOBAL LOADING STATE ---
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-tech-bg flex items-center justify-center relative overflow-hidden">
+         <div className={`absolute inset-0 z-[-1] opacity-50 ${BACKGROUND_STYLE}`} />
+         <div className="flex flex-col items-center gap-4 relative z-10">
+            <div className="w-16 h-16 border-4 border-tech-primary/30 border-t-tech-primary rounded-full animate-spin"></div>
+            <p className="text-slate-500 text-sm font-mono animate-pulse">Загрузка портфолио...</p>
+         </div>
+      </div>
+    );
+  }
+
   return (
     <>
+        {/* Theme Overlays */}
+        {themeSettings.isNewYearMode && <NewYearOverlay />}
+
         {/* Background Layer - Fixed position to create depth effect */}
         <div className={`fixed inset-0 z-[-1] bg-tech-bg ${BACKGROUND_STYLE}`} />
 
         {/* Content Layer - Scrolls over the background */}
-        <div className="min-h-screen pb-32 md:pb-24 w-full max-w-[1600px] mx-auto px-0 sm:px-4 relative">
+        <div className="min-h-screen pb-32 md:pb-24 w-full max-w-[1600px] mx-auto px-0 sm:px-4 relative animate-[fadeIn_0.5s_ease-out]">
         
         {/* Hero Section */}
         <div id="hero">
-            <Hero data={profile.hero} socials={profile.socials} />
+            <Hero 
+              data={profile.hero} 
+              socials={profile.socials} 
+            />
         </div>
 
         {/* Projects Section */}
@@ -239,9 +273,7 @@ const App: React.FC = () => {
             title="Кейсы"
             subtitle="Проекты повышающие эффективность" 
             />
-            {isLoading ? (
-            <div className="flex justify-center p-8"><div className="w-8 h-8 border-2 border-tech-primary border-t-transparent rounded-full animate-spin"></div></div>
-            ) : (
+            {/* Loading state is handled globally now, so we render projects directly */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {projects.length > 0 ? (
                     projects.map((project) => (
@@ -259,7 +291,6 @@ const App: React.FC = () => {
                     </div>
                 )}
             </div>
-            )}
         </section>
 
         {/* Services Section */}
@@ -268,9 +299,6 @@ const App: React.FC = () => {
             title="Мои Услуги" 
             subtitle="Чем я могу быть полезен вашему бизнесу" 
             />
-            {isLoading ? (
-            <div className="flex justify-center p-8"><div className="w-8 h-8 border-2 border-tech-primary border-t-transparent rounded-full animate-spin"></div></div>
-            ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {services.length > 0 ? (
                     services.map((service) => (
@@ -286,7 +314,6 @@ const App: React.FC = () => {
                     </div>
                 )}
             </div>
-            )}
         </section>
 
         {/* Contact Section */}
@@ -321,13 +348,6 @@ const App: React.FC = () => {
                     )
                 })()}
                 
-                <a 
-                href="mailto:hello@example.com"
-                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-tech-card border border-tech-border text-white font-medium flex items-center justify-center gap-2 hover:bg-tech-border transition-colors"
-                >
-                <Mail size={18} />
-                Email
-                </a>
             </div>
             </div>
             

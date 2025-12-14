@@ -14,7 +14,7 @@ export const Hero: React.FC<HeroProps> = ({ data, socials }) => {
       <div className="absolute top-[-10%] left-[50%] -translate-x-1/2 w-[300px] h-[300px] bg-tech-primary/10 blur-[100px] rounded-full pointer-events-none"></div>
 
       <div className="relative z-10 mb-6">
-        <div className="w-28 h-28 rounded-full p-1 bg-gradient-to-tr from-tech-primary to-tech-accent mx-auto mb-4">
+        <div className="relative w-28 h-28 rounded-full p-1 bg-gradient-to-tr from-tech-primary to-tech-accent mx-auto mb-4">
           <div className="w-full h-full rounded-full overflow-hidden bg-tech-bg border-4 border-tech-bg relative">
             <OptimizedImage 
               src={data.avatarUrl} 
@@ -43,18 +43,18 @@ export const Hero: React.FC<HeroProps> = ({ data, socials }) => {
         </p>
       </div>
 
-      <div className="flex gap-4 z-10 flex-wrap justify-center">
+      <div className="flex gap-4 z-10 flex-wrap justify-center mt-2">
         {socials.map((social) => (
           <a
             key={social.platform}
             href={social.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-3 rounded-xl bg-tech-card border border-tech-border text-slate-400 hover:text-white hover:border-tech-primary/50 hover:bg-tech-border transition-all duration-300"
+            className="relative p-3 rounded-xl bg-tech-card border border-tech-border text-slate-400 hover:text-white hover:border-tech-primary/50 hover:bg-tech-border transition-all duration-300 group"
             aria-label={social.platform}
             title={social.platform}
           >
-            <social.icon size={20} />
+            <social.icon size={20} className="relative z-10" />
           </a>
         ))}
       </div>

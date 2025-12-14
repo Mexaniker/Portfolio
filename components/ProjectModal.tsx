@@ -67,9 +67,9 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
             </div>
 
             <div className="prose prose-invert max-w-none">
-              <p className="text-slate-300 text-base sm:text-lg leading-relaxed mb-8 border-l-2 border-tech-primary/30 pl-4">
+              <div className="text-slate-300 text-base sm:text-lg leading-relaxed mb-8 border-l-2 border-tech-primary/30 pl-4 whitespace-pre-line">
                 {project.longDescription || project.description}
-              </p>
+              </div>
               
               {project.features && (
                 <div className="mb-6 bg-tech-card/30 p-5 rounded-xl border border-tech-border/50">

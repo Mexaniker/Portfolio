@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { auth } from '../firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
 import { Lock, AlertCircle } from 'lucide-react';
 
 export const Login: React.FC = () => {
@@ -19,7 +18,7 @@ export const Login: React.FC = () => {
     setError('');
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await auth.signInWithEmailAndPassword(email, password);
     } catch (err: any) {
       console.error(err);
       setError('Ошибка входа. Проверьте логин и пароль.');

@@ -18,6 +18,7 @@ export interface Project {
   // Extended details
   longDescription?: string;
   features?: string[];
+  order?: number;
 }
 
 export interface Service {
@@ -30,6 +31,7 @@ export interface Service {
   longDescription?: string;
   features?: string[];
   iconName?: string;
+  order?: number;
 }
 
 export interface SocialLink {
@@ -51,4 +53,8 @@ export interface HeroData {
 export interface ProfileData {
     hero: HeroData;
     socials: SocialLink[];
+}
+
+export interface ThemeSettings {
+    isNewYearMode: boolean;
 }

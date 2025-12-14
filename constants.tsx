@@ -10,11 +10,12 @@ import {
 } from 'lucide-react';
 import { Project, Service, TagType, SocialLink, HeroData } from './types';
 
+// Используем пустые строки или заглушки, чтобы не было "мигания" случайных картинок
 export const HERO_DATA: HeroData = {
   name: "Alex Dev",
   title: "AI Engineer & Architect",
   bio: "Разрабатываю интеллектуальные системы автоматизации, внедряю LLM в бизнес-процессы и создаю современные веб-интерфейсы.",
-  avatarUrl: "https://picsum.photos/200/200",
+  avatarUrl: "", // Убрана случайная картинка
   status: "Open to work"
 };
 
@@ -30,7 +31,7 @@ export const PROJECTS: Project[] = [
       "Определение сентимента клиента",
       "Бесшовная передача диалога оператору"
     ],
-    imageUrl: "https://picsum.photos/800/600?random=1",
+    imageUrl: "", // Убрана случайная картинка
     tags: [TagType.AI, TagType.BOT, TagType.AUTOMATION],
     stats: "Сокращение времени ответа на 80%",
     link: "#"
@@ -46,7 +47,7 @@ export const PROJECTS: Project[] = [
       "Интеграция с AmoCRM",
       "Автоматический фоллоу-ап"
     ],
-    imageUrl: "https://picsum.photos/800/600?random=2",
+    imageUrl: "", // Убрана случайная картинка
     tags: [TagType.AUTOMATION, TagType.AI],
     stats: "+150 лидов в неделю"
   },
@@ -61,7 +62,7 @@ export const PROJECTS: Project[] = [
       "Темная/Светлая тема",
       "Адаптивный дизайн (Mobile First)"
     ],
-    imageUrl: "https://picsum.photos/800/600?random=3",
+    imageUrl: "", // Убрана случайная картинка
     tags: [TagType.WEB, TagType.AI],
     stats: "React + Tailwind",
     link: "#"
@@ -77,7 +78,7 @@ export const PROJECTS: Project[] = [
       "Экспорт в Notion/Calendar",
       "Telegram WebApp интерфейс"
     ],
-    imageUrl: "https://picsum.photos/800/600?random=4",
+    imageUrl: "", // Убрана случайная картинка
     tags: [TagType.BOT, TagType.AI, TagType.WEB],
     stats: "Telegram WebApp",
     link: "#"

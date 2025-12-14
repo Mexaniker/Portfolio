@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../firebase';
-import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 // Removed Firebase Storage imports
-import { signOut } from 'firebase/auth';
-import { Project, Service, TagType, ProfileData, SocialLink } from '../types';
+import { Project, Service, TagType, ProfileData, SocialLink, ThemeSettings } from '../types';
 import { PROJECTS, SERVICES } from '../constants';
-import { Plus, Trash2, LogOut, UploadCloud, Edit3, User, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Plus, Trash2, LogOut, UploadCloud, Edit3, User, X, Image as ImageIcon, Loader2, ArrowUp, ArrowDown, Palette, ToggleLeft, ToggleRight, Snowflake } from 'lucide-react';
 import * as Icons from 'lucide-react';
 
 interface AdminPanelProps {
   initialProjects: Project[];
   initialServices: Service[];
   initialProfile: ProfileData;
+  initialTheme: ThemeSettings;
   onUpdate: () => void;
 }
 
@@ -315,137 +314,29 @@ const ProfileEditor = ({
     );
 };
 
-export const AdminPanel: React.FC<AdminPanelProps> = ({ initialProjects, initialServices, initialProfile, onUpdate }) => {
-  const [activeTab, setActiveTab] = useState<'projects' | 'services' | 'profile'>('projects');
-  
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const [services, setServices] = useState<Service[]>(initialServices);
-  const [profile, setProfile] = useState<ProfileData>(initialProfile);
-  
-  const [editingItem, setEditingItem] = useState<any | null>(null);
-  const [loading, setLoading] = useState(false);
+// === FORM COMPONENTS MOVED OUTSIDE ===
 
-  useEffect(() => {
-    setProjects(initialProjects);
-    setServices(initialServices);
-    setProfile(initialProfile);
-  }, [initialProjects, initialServices, initialProfile]);
-
-  const handleLogout = () => {
-    if (auth) signOut(auth);
-  };
-
-  const uploadSeedData = async () => {
-    if (!db) return;
-    if (!window.confirm('Это перезапишет ВСЕ данные (в том числе Профиль) дефолтными значениями. Продолжить?')) return;
-    
-    setLoading(true);
-    try {
-      // Upload Projects
-      for (const p of PROJECTS) {
-        await setDoc(doc(db, 'projects', p.id), p);
-      }
-      // Upload Services
-      for (const s of SERVICES) {
-        const serviceData = {
-           ...s,
-           iconName: (s.icon as any).displayName || s.icon.name || 'Box' 
-        };
-        delete (serviceData as any).icon;
-        await setDoc(doc(db, 'services', s.id), serviceData);
-      }
-      // Upload Profile Data if needed (Optional, usually static consts)
-      alert('Данные сброшены (проекты/услуги).');
-      
-      onUpdate();
-    } catch (e) {
-      console.error(e);
-      alert('Ошибка при загрузке данных');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (collectionName: string, id: string) => {
-    if (!db || !window.confirm('Удалить элемент?')) return;
-    try {
-      await deleteDoc(doc(db, collectionName, id));
-      onUpdate();
-    } catch (e) {
-      console.error(e);
-      alert('Ошибка удаления');
-    }
-  };
-
-  const handleSave = async (collectionName: string, data: any) => {
-    if (!db) {
-        alert("База данных не подключена.");
-        setEditingItem(null);
-        return;
-    }
-    setLoading(true);
-    try {
-      const id = data.id || doc(collection(db, collectionName)).id;
-      const dataToSave = { ...data, id };
-      
-      if (collectionName === 'services') {
-          delete dataToSave.icon; 
-          if (!dataToSave.iconName) dataToSave.iconName = 'Box';
-      }
-
-      await setDoc(doc(db, collectionName, id), dataToSave);
-      setEditingItem(null);
-      onUpdate();
-    } catch (e: any) {
-      console.error(e);
-      alert('Ошибка сохранения: ' + e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveProfile = async (newProfileData: ProfileData) => {
-      if (!db) {
-          alert("БД не подключена.");
-          return;
-      }
-      setLoading(true);
-      try {
-          // Prepare for DB: remove icon components from socials
-          const socialsForDb = newProfileData.socials.map(s => {
-              const { icon, ...rest } = s as any;
-              return { ...rest, iconName: s.iconName || 'Link' };
-          });
-
-          const dataToSave = {
-              hero: newProfileData.hero,
-              socials: socialsForDb
-          };
-
-          await setDoc(doc(db, 'settings', 'profile'), dataToSave);
-          onUpdate();
-          alert('Профиль сохранен!');
-      } catch (e: any) {
-          console.error(e);
-          alert('Ошибка сохранения профиля: ' + e.message);
-      } finally {
-          setLoading(false);
-      }
-  };
-
-  const ProjectForm = ({ project, onSave, onCancel }: { project?: Partial<Project>, onSave: (p: any) => void, onCancel: () => void }) => {
-    const [formData, setFormData] = useState(() => {
+const ProjectForm = ({ project, onSave, onCancel, loading }: { project?: Partial<Project>, onSave: (p: any) => void, onCancel: () => void, loading: boolean }) => {
+    const [formData, setFormData] = useState<Partial<Project>>(() => {
         if (project && project.id) return { ...project };
         return {
             title: '', 
             description: '', 
-            // Changed from picsum.photos to empty string to avoid random images
             imageUrl: '', 
             tags: [], 
             features: [], 
             stats: ''
         };
     });
+
+    const handleSaveClick = () => {
+        // Sanitize features (remove empty strings)
+        const cleanData = {
+            ...formData,
+            features: formData.features?.filter(f => f.trim().length > 0) || []
+        };
+        onSave(cleanData);
+    };
 
     return (
       <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto backdrop-blur-sm">
@@ -512,7 +403,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ initialProjects, initial
             <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
               <button onClick={onCancel} className="px-6 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors">Отмена</button>
               <button 
-                  onClick={() => onSave(formData)} 
+                  onClick={handleSaveClick} 
                   disabled={loading}
                   className="px-6 py-2 bg-tech-primary text-black rounded-lg font-bold hover:bg-cyan-300 transition-colors flex items-center gap-2"
               >
@@ -524,15 +415,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ initialProjects, initial
         </div>
       </div>
     );
-  };
+};
 
-  const ServiceForm = ({ service, onSave, onCancel }: { service?: Partial<Service>, onSave: (p: any) => void, onCancel: () => void }) => {
-    const [formData, setFormData] = useState(() => {
+const ServiceForm = ({ service, onSave, onCancel, loading }: { service?: Partial<Service>, onSave: (p: any) => void, onCancel: () => void, loading: boolean }) => {
+    const [formData, setFormData] = useState<Partial<Service>>(() => {
         if (service && service.id) return { ...service };
         return {
             title: '', description: '', iconName: 'Box', priceStart: '', features: [], longDescription: ''
         };
     });
+
+    const handleSaveClick = () => {
+         const cleanData = {
+            ...formData,
+            features: formData.features?.filter(f => f.trim().length > 0) || []
+        };
+        onSave(cleanData);
+    };
 
     return (
       <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto backdrop-blur-sm">
@@ -613,7 +512,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ initialProjects, initial
           <div className="flex justify-end gap-3 pt-4 border-t border-white/5 flex-shrink-0 mt-4">
             <button onClick={onCancel} className="px-6 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors">Отмена</button>
             <button 
-                onClick={() => onSave(formData)} 
+                onClick={handleSaveClick} 
                 disabled={loading}
                 className="px-6 py-2 bg-tech-primary text-black rounded-lg font-bold hover:bg-cyan-300 transition-colors flex items-center gap-2"
             >
@@ -624,6 +523,203 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ initialProjects, initial
         </div>
       </div>
     );
+};
+
+export const AdminPanel: React.FC<AdminPanelProps> = ({ initialProjects, initialServices, initialProfile, initialTheme, onUpdate }) => {
+  const [activeTab, setActiveTab] = useState<'projects' | 'services' | 'profile' | 'styles'>('projects');
+  
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [services, setServices] = useState<Service[]>(initialServices);
+  const [profile, setProfile] = useState<ProfileData>(initialProfile);
+  const [theme, setTheme] = useState<ThemeSettings>(initialTheme);
+  
+  const [editingItem, setEditingItem] = useState<any | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setProjects(initialProjects);
+    setServices(initialServices);
+    setProfile(initialProfile);
+    setTheme(initialTheme);
+  }, [initialProjects, initialServices, initialProfile, initialTheme]);
+
+  const handleLogout = () => {
+    if (auth) auth.signOut();
+  };
+
+  const uploadSeedData = async () => {
+    if (!db) return;
+    if (!window.confirm('Это перезапишет ВСЕ данные (в том числе Профиль) дефолтными значениями. Продолжить?')) return;
+    
+    setLoading(true);
+    try {
+      // Upload Projects
+      for (let i = 0; i < PROJECTS.length; i++) {
+        const p = PROJECTS[i];
+        await db.collection('projects').doc(p.id).set({ ...p, order: i });
+      }
+      // Upload Services
+      for (let i = 0; i < SERVICES.length; i++) {
+        const s = SERVICES[i];
+        const serviceData = {
+           ...s,
+           iconName: (s.icon as any).displayName || s.icon.name || 'Box',
+           order: i
+        };
+        delete (serviceData as any).icon;
+        await db.collection('services').doc(s.id).set(serviceData);
+      }
+      // Upload Profile Data if needed (Optional, usually static consts)
+      alert('Данные сброшены (проекты/услуги).');
+      
+      onUpdate();
+    } catch (e) {
+      console.error(e);
+      alert('Ошибка при загрузке данных');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (collectionName: string, id: string) => {
+    if (!db || !window.confirm('Удалить элемент?')) return;
+    try {
+      await db.collection(collectionName).doc(id).delete();
+      onUpdate();
+    } catch (e) {
+      console.error(e);
+      alert('Ошибка удаления');
+    }
+  };
+
+  const handleSave = async (collectionName: string, data: any) => {
+    if (!db) {
+        alert("База данных не подключена.");
+        setEditingItem(null);
+        return;
+    }
+    setLoading(true);
+    try {
+      const id = data.id || db.collection(collectionName).doc().id;
+      const dataToSave = { ...data, id };
+      
+      if (collectionName === 'services') {
+          delete dataToSave.icon; 
+          if (!dataToSave.iconName) dataToSave.iconName = 'Box';
+      }
+
+      // If new item, add to the end
+      if (!data.id) {
+          const currentList = collectionName === 'projects' ? projects : services;
+          dataToSave.order = currentList.length;
+      }
+
+      await db.collection(collectionName).doc(id).set(dataToSave);
+      
+      // Optimistic update
+      if (collectionName === 'projects') {
+          const newProjects = data.id 
+             ? projects.map(p => p.id === id ? { ...p, ...dataToSave } : p)
+             : [...projects, dataToSave];
+          setProjects(newProjects as Project[]);
+      } else {
+          // Reconstruct icon for optimistic update
+          let IconComp = (Icons as any)[dataToSave.iconName] || Icons.Box;
+          const newService = { ...dataToSave, icon: IconComp };
+          const newServices = data.id 
+             ? services.map(s => s.id === id ? newService : s)
+             : [...services, newService];
+          setServices(newServices as Service[]);
+      }
+
+      setEditingItem(null);
+      // Background fetch to sync
+      onUpdate();
+    } catch (e: any) {
+      console.error(e);
+      alert('Ошибка сохранения: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMoveItem = async (collectionName: 'projects' | 'services', index: number, direction: 'up' | 'down') => {
+      if (!db) return;
+      
+      const list = collectionName === 'projects' ? [...projects] : [...services];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+      if (targetIndex < 0 || targetIndex >= list.length) return;
+
+      // Swap in local array
+      [list[index], list[targetIndex]] = [list[targetIndex], list[index]];
+
+      // Update local state immediately
+      if (collectionName === 'projects') setProjects(list as Project[]);
+      else setServices(list as Service[]);
+
+      // Update Firestore in background (Batch write)
+      try {
+          const batch = db.batch();
+          list.forEach((item, idx) => {
+              const ref = db.collection(collectionName).doc(item.id);
+              batch.update(ref, { order: idx });
+          });
+          await batch.commit();
+          // No need to call onUpdate() here as we already updated local state and DB is consistent
+      } catch (e) {
+          console.error("Error reordering:", e);
+          alert("Ошибка при сохранении порядка сортировки");
+          onUpdate(); // Revert to server state on error
+      }
+  };
+
+  const handleSaveProfile = async (newProfileData: ProfileData) => {
+      if (!db) {
+          alert("БД не подключена.");
+          return;
+      }
+      setLoading(true);
+      try {
+          // Prepare for DB: remove icon components from socials
+          const socialsForDb = newProfileData.socials.map(s => {
+              const { icon, ...rest } = s as any;
+              return { ...rest, iconName: s.iconName || 'Link' };
+          });
+
+          const dataToSave = {
+              hero: newProfileData.hero,
+              socials: socialsForDb
+          };
+
+          await db.collection('settings').doc('profile').set(dataToSave);
+          onUpdate();
+          alert('Профиль сохранен!');
+      } catch (e: any) {
+          console.error(e);
+          alert('Ошибка сохранения профиля: ' + e.message);
+      } finally {
+          setLoading(false);
+      }
+  };
+
+  const toggleThemeMode = async (mode: 'isNewYearMode', value: boolean) => {
+      if (!db) {
+          alert("БД не подключена.");
+          return;
+      }
+      
+      const newTheme = { ...theme, [mode]: value };
+      setTheme(newTheme); // Optimistic
+
+      try {
+          await db.collection('settings').doc('theme').set(newTheme);
+          onUpdate();
+      } catch (e: any) {
+          console.error(e);
+          alert('Ошибка сохранения темы');
+          setTheme(theme); // Revert
+      }
   };
 
   return (
@@ -677,6 +773,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ initialProjects, initial
                     <User size={16} />
                     Профиль
                 </button>
+                <button 
+                    className={`pb-2 px-4 font-medium transition-colors whitespace-nowrap flex items-center gap-2 ${activeTab === 'styles' ? 'text-tech-primary border-b-2 border-tech-primary' : 'text-slate-500 hover:text-white'}`}
+                    onClick={() => setActiveTab('styles')}
+                >
+                    <Palette size={16} />
+                    Стилизации
+                </button>
             </div>
 
             {/* List Content */}
@@ -686,6 +789,34 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ initialProjects, initial
                     onSave={handleSaveProfile} 
                     loading={loading} 
                 />
+            ) : activeTab === 'styles' ? (
+                 <div className="bg-tech-card border border-tech-border rounded-xl p-6 shadow-lg max-w-xl mx-auto">
+                    <h3 className="text-xl font-bold text-white mb-6 border-b border-tech-border pb-4 flex items-center gap-2">
+                        <Palette size={20} className="text-tech-primary"/>
+                        Управление темами
+                    </h3>
+                    
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-tech-bg border border-tech-border">
+                            <div className="flex items-center gap-4">
+                                <div className={`p-3 rounded-full ${theme.isNewYearMode ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-slate-500'}`}>
+                                    <Snowflake size={24} />
+                                </div>
+                                <div>
+                                    <h4 className="text-white font-medium">Новогоднее настроение</h4>
+                                    <p className="text-xs text-slate-500 mt-1">Включает легкий снегопад</p>
+                                </div>
+                            </div>
+                            
+                            <button 
+                                onClick={() => toggleThemeMode('isNewYearMode', !theme.isNewYearMode)}
+                                className={`text-2xl transition-colors ${theme.isNewYearMode ? 'text-tech-primary' : 'text-slate-600'}`}
+                            >
+                                {theme.isNewYearMode ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
+                            </button>
+                        </div>
+                    </div>
+                 </div>
             ) : (
                 <div className="grid gap-4">
                     <button 
@@ -696,8 +827,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ initialProjects, initial
                         Добавить {activeTab === 'projects' ? 'Проект' : 'Услугу'}
                     </button>
 
-                    {activeTab === 'projects' && projects.map(p => (
+                    {activeTab === 'projects' && projects.map((p, idx) => (
                         <div key={p.id} className="bg-tech-card border border-tech-border rounded-xl p-4 flex gap-4 items-center group">
+                            {/* Order Controls */}
+                            <div className="flex flex-col gap-1 mr-2">
+                                <button 
+                                    onClick={() => handleMoveItem('projects', idx, 'up')}
+                                    disabled={idx === 0}
+                                    className="p-1 text-slate-500 hover:text-white disabled:opacity-30 hover:bg-white/10 rounded"
+                                >
+                                    <ArrowUp size={16} />
+                                </button>
+                                <button 
+                                    onClick={() => handleMoveItem('projects', idx, 'down')}
+                                    disabled={idx === projects.length - 1}
+                                    className="p-1 text-slate-500 hover:text-white disabled:opacity-30 hover:bg-white/10 rounded"
+                                >
+                                    <ArrowDown size={16} />
+                                </button>
+                            </div>
+
                             <div className="w-16 h-16 rounded-lg bg-black overflow-hidden flex-shrink-0">
                                 <img src={p.imageUrl} className="w-full h-full object-cover" alt="" />
                             </div>
@@ -712,10 +861,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ initialProjects, initial
                         </div>
                     ))}
 
-                    {activeTab === 'services' && services.map(s => {
+                    {activeTab === 'services' && services.map((s, idx) => {
                         const IconComp = s.icon;
                         return (
                             <div key={s.id} className="bg-tech-card border border-tech-border rounded-xl p-4 flex gap-4 items-center group">
+                                {/* Order Controls */}
+                                <div className="flex flex-col gap-1 mr-2">
+                                    <button 
+                                        onClick={() => handleMoveItem('services', idx, 'up')}
+                                        disabled={idx === 0}
+                                        className="p-1 text-slate-500 hover:text-white disabled:opacity-30 hover:bg-white/10 rounded"
+                                    >
+                                        <ArrowUp size={16} />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleMoveItem('services', idx, 'down')}
+                                        disabled={idx === services.length - 1}
+                                        className="p-1 text-slate-500 hover:text-white disabled:opacity-30 hover:bg-white/10 rounded"
+                                    >
+                                        <ArrowDown size={16} />
+                                    </button>
+                                </div>
+                                
                                 <div className="w-16 h-16 flex items-center justify-center bg-tech-bg rounded-lg text-tech-primary border border-tech-border flex-shrink-0">
                                     <IconComp size={24} />
                                 </div>
@@ -740,6 +907,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ initialProjects, initial
                 project={editingItem} 
                 onSave={(data) => handleSave('projects', data)} 
                 onCancel={() => setEditingItem(null)} 
+                loading={loading}
             />
         )}
         {editingItem && activeTab === 'services' && (
@@ -747,6 +915,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ initialProjects, initial
                 service={editingItem} 
                 onSave={(data) => handleSave('services', data)} 
                 onCancel={() => setEditingItem(null)} 
+                loading={loading}
             />
         )}
         </div>

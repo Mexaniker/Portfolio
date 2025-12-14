@@ -58,9 +58,9 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({ service, onClose }) 
             </div>
 
             <div className="prose prose-invert max-w-none">
-              <p className="text-slate-300 text-base sm:text-lg leading-relaxed mb-8">
+              <div className="text-slate-300 text-base sm:text-lg leading-relaxed mb-8 whitespace-pre-line">
                 {service.longDescription || service.description}
-              </p>
+              </div>
               
               {service.features && (
                 <div className="mb-6 bg-tech-card/30 p-5 rounded-xl border border-tech-border/50">
@@ -84,12 +84,14 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({ service, onClose }) 
 
         {/* Footer Actions */}
         <div className="p-4 border-t border-tech-border bg-tech-bg/95 flex justify-end gap-3 flex-shrink-0 backdrop-blur-sm">
-            <button 
-              onClick={onClose}
-              className="px-6 py-2.5 rounded-xl bg-tech-primary text-black hover:bg-cyan-300 transition-colors text-sm font-bold shadow-lg shadow-cyan-500/20"
+            <a 
+              href="https://t.me/samat_ali"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-2.5 rounded-xl bg-tech-primary text-black hover:bg-cyan-300 transition-colors text-sm font-bold shadow-lg shadow-cyan-500/20 inline-flex items-center justify-center text-center no-underline"
             >
               Обсудить задачу
-            </button>
+            </a>
         </div>
       </div>
     </div>

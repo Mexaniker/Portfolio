@@ -1,7 +1,7 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
-import { getStorage } from 'firebase/storage';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
+import 'firebase/compat/auth';
+import 'firebase/compat/storage';
 
 // Попытка получить ключи из переменных окружения (для Vite/Create-React-App/Next.js)
 // Если переменных нет (текущий режим), используются строки, которые вы предоставили.
@@ -32,38 +32,15 @@ const firebaseConfig = {
 // Initialize Firebase
 let app;
 try {
-    app = initializeApp(firebaseConfig);
+    if (firebase.apps.length === 0) {
+        app = firebase.initializeApp(firebaseConfig);
+    } else {
+        app = firebase.app();
+    }
 } catch (e) {
     console.error("Firebase initialization error:", e);
 }
 
-// Safely initialize services to handle potential SecurityErrors in sandboxed iframes
-export const db = (() => {
-    if (!app) return null;
-    try {
-        return getFirestore(app);
-    } catch(e) {
-        console.error("Firestore init error (SecurityError?):", e);
-        return null;
-    }
-})();
-
-export const auth = (() => {
-    if (!app) return null;
-    try {
-        return getAuth(app);
-    } catch(e) {
-        console.error("Auth init error (SecurityError?):", e);
-        return null;
-    }
-})();
-
-export const storage = (() => {
-    if (!app) return null;
-    try {
-        return getStorage(app);
-    } catch(e) {
-        console.error("Storage init error (SecurityError?):", e);
-        return null;
-    }
-})();
+export const db = app ? app.firestore() : null;
+export const auth = app ? app.auth() : null;
+export const storage = app ? app.storage() : null;
